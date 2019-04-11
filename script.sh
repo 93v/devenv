@@ -200,16 +200,17 @@ self_update() {
 
 # macOS Cleanup
 mac_cleanup() {
+    p_info "Cleaning up. This may take a while... "
     # Empty Trash
 	sudo rm -rfv /Volumes/*/.Trashes &>/dev/null
 	sudo rm -rfv ~/.Trash &>/dev/null
 	# User Caches and Logs
-	rm -rfv ~/Library/Caches/*
-	rm -rfv ~/Library/logs/*
+	rm -rfv ~/Library/Caches/* &>/dev/null
+	rm -rfv ~/Library/logs/* &>/dev/null
 	# System Caches and Logs
-	sudo rm -rfv /Library/Caches/*
-	sudo rm -rfv /Library/logs/*
-	sudo rm -rfv /var/log/*
+	sudo rm -rfv /Library/Caches/* &>/dev/null
+	sudo rm -rfv /Library/logs/* &>/dev/null
+	sudo rm -rfv /var/log/* &>/dev/null
 	sudo rm -rfv /private/var/log/asl/*.asl &>/dev/null
 	sudo rm -rfv /Library/Logs/DiagnosticReports/* &>/dev/null
 	sudo rm -rfv /Library/Logs/Adobe/* &>/dev/null
@@ -218,7 +219,7 @@ mac_cleanup() {
 	# Adobe Caches
 	sudo rm -rfv ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null
 	# Private Folders
-	sudo rm -rfv /private/var/folders/*
+	sudo rm -rfv /private/var/folders/* &>/dev/null
 	# iOS Apps, Backups and Photos Cache
 	rm -rfv ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null
 	rm -rfv ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null
@@ -234,11 +235,10 @@ mac_cleanup() {
 	gem cleanup &>/dev/null
 	# Old Dockers
 	if type "docker" > /dev/null; then
-		p_infoln 'Cleanup Docker...'
-		docker container prune -f
-		docker image prune -f
-		docker volume prune -f
-		docker network prune -f
+		docker container prune -f &>/dev/null
+		docker image prune -f &>/dev/null
+		docker volume prune -f &>/dev/null
+		docker network prune -f &>/dev/null
 	fi
 	# Memory
 	sudo purge
@@ -246,7 +246,7 @@ mac_cleanup() {
 	# Applications Caches
 	for x in $(ls ~/Library/Containers/)
 	do
-		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/*
+		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null
 	done
 
     p_successln "Cleanup Completed!"
