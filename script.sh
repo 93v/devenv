@@ -103,7 +103,7 @@ if [[ ${machine} == UNKNOWN* ]]; then
 fi
 
 mac_configure() {
-    p_infoln "Configuring macOS..."
+    p_info "Configuring macOS... "
     defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
 	defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 	defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
@@ -117,15 +117,16 @@ mac_configure() {
 }
 
 mac_install_command_line_tools() {
+    p_info "Installing Command Line Tools... "
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
 	touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
-	softwareupdate -i "$clt"
+	softwareupdate -i "$clt" >/dev/null 2>&1
 	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
+    p_successln "Command Line Tools Installed!"
 }
 
 mac_smart_install_command_line_tools() {
-    p_infoln "Installing Command Line Tools..."
     if pkgutil --pkg-info com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
 		count=0
 		for file in $(pkgutil --files com.apple.pkg.CLTools_Executables); do
@@ -138,7 +139,13 @@ mac_smart_install_command_line_tools() {
 	else
 		mac_install_command_line_tools
 	fi
-    p_successln "Command Line Tools Installed!"
+}
+
+mac_install_brew() {
+    p_info "Installing Homebrew..."
+    mac_smart_install_command_line_tools
+    echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" >/dev/null 2>&1
+    p_successln "Homebrew Installed!"
 }
 
 mac_setup() {
@@ -147,6 +154,7 @@ mac_setup() {
 
     configure_mac=false
     install_command_line_tools=false
+    install_brew=false
 
     if [ "$install_all" != true ]; then
         p_info "Do you want to configure macOS? "
@@ -154,11 +162,21 @@ mac_setup() {
 
         p_info "Do you want to install Command Line Tools? "
         if prompt "[y/N]"; then install_command_line_tools=true; fi
+
+        p_info "Do you want to install Homebrew? "
+        if prompt "[y/N]"; then install_brew=true; fi
+
+        if $install_brew && ! $install_command_line_tools; then
+            p_log "Homebrew installation requires Command Line Tools. "
+            p_logln "Will install Command Line Tools."
+            install_command_line_tools=true
+        fi
     fi
 
     if $install_all || $configure_mac; then mac_configure; fi
     if $install_all || $install_command_line_tools; then mac_smart_install_command_line_tools; fi
-    p_alertln "macOS setup scripts coming soon..."
+    if $install_all || $install_brew; then mac_install_brew; fi
+    p_successln "Setup Finished!"
 }
 
 linux_setup() {
