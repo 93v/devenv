@@ -148,6 +148,18 @@ mac_install_brew() {
     p_successln "Homebrew Installed!"
 }
 
+mac_smart_install_brew() {
+    [ ! $(which brew) ] && mac_install_brew
+}
+
+mac_install_mas() {
+    p_info "Installing Mac App Store command line interface..."
+    mac_smart_install_brew
+    [ $(which brew) ] && brew install mas >/dev/null 2>&1
+    [ $(which xcodebuild) ] && sudo xcodebuild -license accept >/dev/null 2>&1
+    p_successln "Mac App Store command line interface Installed!"
+}
+
 mac_setup() {
     install_all=false
     [[ "$1" = "--all" ]] && install_all=true
@@ -155,6 +167,7 @@ mac_setup() {
     configure_mac=false
     install_command_line_tools=false
     install_brew=false
+    install_mas=false
 
     if [ "$install_all" != true ]; then
         p_info "Do you want to configure macOS? "
@@ -163,12 +176,32 @@ mac_setup() {
         p_info "Do you want to install Command Line Tools? "
         if prompt "[y/N]"; then install_command_line_tools=true; fi
 
-        p_info "Do you want to install Homebrew? "
-        if prompt "[y/N]"; then install_brew=true; fi
+        if [ ! $(which brew) ]; then
+            p_info "Do you want to install Homebrew? "
+            if prompt "[y/N]"; then install_brew=true; fi
+        fi
 
         if $install_brew && ! $install_command_line_tools; then
             p_log "Homebrew installation requires Command Line Tools. "
-            p_logln "Will install Command Line Tools."
+            p_logln "Will automatically install Command Line Tools."
+            install_command_line_tools=true
+        fi
+
+        if [ ! $(which mas) ]; then
+            p_info "Do you want to install Mac App Store command line interface? "
+            if prompt "[y/N]"; then install_mas=true; fi
+        fi
+
+        if $install_mas && ! $install_brew && [ ! $(which brew) ]; then
+            p_log "Mac App Store command line interface installation requires Homebrew. "
+            p_logln "Will automatically install Homebrew."
+            install_brew=true
+        fi
+
+        # TODO: find a better way to avoid duplicates
+        if $install_brew && ! $install_command_line_tools; then
+            p_log "Homebrew installation requires Command Line Tools. "
+            p_logln "Will automatically install Command Line Tools."
             install_command_line_tools=true
         fi
     fi
@@ -176,6 +209,10 @@ mac_setup() {
     if $install_all || $configure_mac; then mac_configure; fi
     if $install_all || $install_command_line_tools; then mac_smart_install_command_line_tools; fi
     if $install_all || $install_brew; then mac_install_brew; fi
+    if $install_all || $install_mas; then mac_install_mas; fi
+
+    # New line
+    echo
     p_successln "Setup Finished!"
 }
 
