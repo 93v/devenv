@@ -81,6 +81,11 @@ prompt() { read -p "$1 " -n 1 -r && echo; [[ $REPLY =~ ^[Yy]$ ]] && true || fals
 # 	echo 'OK'
 # fi
 
+# Util functions
+free-port() { kill "$(lsof -t -i :$1)"; }
+
+kill-port() { kill -kill "$(lsof -t -i :$1)"; }
+
 # Getting the OS the script is running on
 os_name="$(uname -s)"
 case "${os_name}" in
