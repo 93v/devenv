@@ -27,7 +27,61 @@ self_update() {
     echo "DevEnv Updated!"
 }
 
+mac_cleanup() {
+    # Empty Trash
+	sudo rm -rfv /Volumes/*/.Trashes &>/dev/null
+	sudo rm -rfv ~/.Trash &>/dev/null
+	# User Caches and Logs
+	rm -rfv ~/Library/Caches/*
+	rm -rfv ~/Library/logs/*
+	# System Caches and Logs
+	sudo rm -rfv /Library/Caches/*
+	sudo rm -rfv /Library/logs/*
+	sudo rm -rfv /var/log/*
+	sudo rm -rfv /private/var/log/asl/*.asl &>/dev/null
+	sudo rm -rfv /Library/Logs/DiagnosticReports/* &>/dev/null
+	sudo rm -rfv /Library/Logs/Adobe/* &>/dev/null
+	rm -rfv ~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/* &>/dev/null
+	rm -rfv ~/Library/Logs/CoreSimulator/* &>/dev/null
+	# Adobe Caches
+	sudo rm -rfv ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null
+	# Private Folders
+	sudo rm -rfv /private/var/folders/*
+	# iOS Apps, Backups and Photos Cache
+	rm -rfv ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null
+	rm -rfv ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null
+	rm -rfv ~/Pictures/iPhoto\ Library/iPod\ Photo\ Cache/*
+	# XCode Derived Data and Archives
+	rm -rfv ~/Library/Developer/Xcode/DerivedData/* &>/dev/null
+	rm -rfv ~/Library/Developer/Xcode/Archives/* &>/dev/null
+	# Homebrew Cache
+	brew cleanup --force -s &>/dev/null
+	rm -rfv /Library/Caches/Homebrew/* &>/dev/null
+	brew tap --repair &>/dev/null
+	# Old gems
+	gem cleanup &>/dev/null
+	# Old Dockers
+	if type "docker" > /dev/null; then
+		echo 'Cleanup Docker'
+		docker container prune -f
+		docker image prune -f
+		docker volume prune -f
+		docker network prune -f
+	fi
+	# Memory
+	sudo purge
+
+	# Applications Caches
+	for x in $(ls ~/Library/Containers/)
+	do
+		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/*
+	done
+}
+
+# Aliases
+
 alias r="source $HOME/.bash_profile"
+alias c="mac_cleanup"
 alias selfu="self_update"
 alias slefu="self_update"
 
