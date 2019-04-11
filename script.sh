@@ -191,6 +191,7 @@ setup() {
 
 # Self Update
 self_update() {
+    p_info "Updating DevEnv... "
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
     curl -sL $UPDATE_URL > $HOME/.bash_profile
     source $HOME/.bash_profile
