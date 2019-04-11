@@ -92,12 +92,23 @@ case "${os_name}" in
 	*)			machine="UNKNOWN:${os_name}"
 esac
 
-if [[ ${machine} == UNKNOWN* ]]; then echo "Unsupported OS ${machine}. Exiting..."; return; fi
+if [[ ${machine} == UNKNOWN* ]]; then
+    p_alertln "Unsupported OS ${machine}. Exiting..."
+    return
+fi
+
+mac_setup() {
+    p_alertln "macOS setup scripts coming soon..."
+}
+
+linux_setup() {
+    p_alertln "Linux setup scripts coming soon..."
+}
 
 # Setup
 setup() {
-    [[ ${machine} == "Mac" ]] && echo "macOS setup scripts coming soon..."
-	[[ ${machine} == "Linux" ]] && echo "Linux setup scripts coming soon..."
+    [[ ${machine} == "Mac" ]] && mac_setup
+	[[ ${machine} == "Linux" ]] && linux_setup
 }
 
 # Self Update
@@ -105,7 +116,7 @@ self_update() {
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
     curl -sL $UPDATE_URL > $HOME/.bash_profile
     source $HOME/.bash_profile
-    echo "DevEnv Updated!"
+    p_successln "DevEnv Updated!"
 }
 
 # macOS Cleanup
@@ -144,7 +155,7 @@ mac_cleanup() {
 	gem cleanup &>/dev/null
 	# Old Dockers
 	if type "docker" > /dev/null; then
-		echo 'Cleanup Docker'
+		p_infoln 'Cleanup Docker...'
 		docker container prune -f
 		docker image prune -f
 		docker volume prune -f
@@ -158,6 +169,8 @@ mac_cleanup() {
 	do
 		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/*
 	done
+
+    p_successln "Cleanup Completed!"
 }
 
 # Aliases
