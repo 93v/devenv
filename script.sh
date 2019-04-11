@@ -256,6 +256,7 @@ mac_cleanup() {
 alias r="source $HOME/.bash_profile"
 alias c="mac_cleanup"
 alias selfu="self_update"
+# slefu is a usual typo
 alias slefu="self_update"
 
 # ------------------------------------------------------------------------------
