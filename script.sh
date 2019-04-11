@@ -117,16 +117,17 @@ mac_configure() {
 }
 
 mac_install_command_line_tools() {
-    p_info "Installing Command Line Tools... "
+    [[ "$1" != "--silent" ]] && p_info "Installing Command Line Tools... "
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
 	touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
 	softwareupdate -i "$clt" >/dev/null 2>&1
 	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
-    p_successln "Command Line Tools Installed!"
+    [[ "$1" != "--silent" ]] && p_successln "Command Line Tools Installed!"
 }
 
 mac_smart_install_command_line_tools() {
+    p_info "Installing Command Line Tools... "
     if pkgutil --pkg-info com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
 		count=0
 		for file in $(pkgutil --files com.apple.pkg.CLTools_Executables); do
@@ -134,11 +135,12 @@ mac_smart_install_command_line_tools() {
 		done
 		if (( count > 0 )); then
 			sudo rm -rfv /Library/Developer/CommandLineTools
-			mac_install_command_line_tools
+			mac_install_command_line_tools --silent
 		fi
 	else
-		mac_install_command_line_tools
+		mac_install_command_line_tools --silent
 	fi
+    p_successln "Command Line Tools Installed!"
 }
 
 mac_install_brew() {
@@ -161,6 +163,16 @@ mac_install_mas() {
 }
 
 mac_setup() {
+    # Keep-alive: update existing `sudo` time stamp until the script has finished.
+	clear
+    p_infoln "Starting the Setup process..."
+    p_logln "The process need to run sudo commands and is going ask you to type your password."
+
+	sudo -v
+	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+	sudo xcodebuild -license accept
+
+    # The actual working part
     install_all=false
     [[ "$1" = "--all" ]] && install_all=true
 
@@ -214,6 +226,9 @@ mac_setup() {
     # New line
     echo
     p_successln "Setup Finished!"
+
+    # Deactivating sudo for the session
+    sudo -k
 }
 
 linux_setup() {
