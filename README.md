@@ -13,6 +13,12 @@ curl -sL https://raw.githubusercontent.com/93v/devenv/master/script.sh > $HOME/.
 ## Launch setup
 
 ```bash
+setup --all
+```
+
+If you want to choose what to configure or install exclude the `--all` option
+
+```bash
 setup
 ```
 

@@ -97,7 +97,62 @@ if [[ ${machine} == UNKNOWN* ]]; then
     return
 fi
 
+mac_configure() {
+    p_infoln "Configuring macOS..."
+    defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+	defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
+	defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+	defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+	defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+	defaults write com.apple.finder QLEnableTextSelection -bool true
+	defaults write com.apple.finder ShowStatusBar -bool true
+	defaults write com.apple.finder ShowPathbar -bool true
+	defaults write com.apple.finder DisableAllAnimations -bool true
+    p_successln "macOS Configured!"
+}
+
+mac_install_command_line_tools() {
+    clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
+	touch "$clt_tmp"
+	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
+	softwareupdate -i "$clt"
+	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
+}
+
+mac_smart_install_command_line_tools() {
+    p_infoln "Installing Command Line Tools..."
+    if pkgutil --pkg-info com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
+		count=0
+		for file in $(pkgutil --files com.apple.pkg.CLTools_Executables); do
+			if [ ! -e "/$file" ]; then ((count++)); break; fi
+		done
+		if (( count > 0 )); then
+			sudo rm -rfv /Library/Developer/CommandLineTools
+			mac_install_command_line_tools
+		fi
+	else
+		mac_install_command_line_tools
+	fi
+    p_successln "Command Line Tools Installed!"
+}
+
 mac_setup() {
+    install_all=false
+    [[ "$1" = "--all" ]] && install_all=true
+
+    configure_mac=false
+    install_command_line_tools=false
+
+    if [ "$install_all" != true ]; then
+        p_info "Do you want to configure macOS? "
+        if prompt "[y/N]"; then configure_mac=true; fi
+
+        p_info "Do you want to install Command Line Tools? "
+        if prompt "[y/N]"; then install_command_line_tools=true; fi
+    fi
+
+    if $install_all || $configure_mac; then mac_configure; fi
+    if $install_all || $install_command_line_tools; then mac_smart_install_command_line_tools; fi
     p_alertln "macOS setup scripts coming soon..."
 }
 
@@ -107,8 +162,8 @@ linux_setup() {
 
 # Setup
 setup() {
-    [[ ${machine} == "Mac" ]] && mac_setup
-	[[ ${machine} == "Linux" ]] && linux_setup
+    [[ ${machine} == "Mac" ]] && mac_setup "$@"
+	[[ ${machine} == "Linux" ]] && linux_setup "$@"
 }
 
 # Self Update
@@ -174,7 +229,6 @@ mac_cleanup() {
 }
 
 # Aliases
-
 alias r="source $HOME/.bash_profile"
 alias c="mac_cleanup"
 alias selfu="self_update"
