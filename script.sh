@@ -136,7 +136,7 @@ mac_install_command_line_tools() {
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
 	touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
-	softwareupdate -i "$clt" >/dev/null 2>&1 & spinner $!
+	( softwareupdate -i "$clt" >/dev/null 2>&1 & spinner $! )
 	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
     [[ "$1" != "--silent" ]] && clear_line && p_successln "Command Line Tools Installed!"
 }
@@ -149,7 +149,7 @@ mac_smart_install_command_line_tools() {
 			if [ ! -e "/$file" ]; then ((count++)); break; fi
 		done
 		if (( count > 0 )); then
-			sudo rm -rfv /Library/Developer/CommandLineTools & spinner $!
+			( sudo rm -rfv /Library/Developer/CommandLineTools & spinner $! )
 			mac_install_command_line_tools --silent
 		fi
 	else
@@ -187,7 +187,7 @@ mac_setup() {
     p_logln "The process needs to run sudo commands and is going ask you to type your password."
 
 	sudo -v
-	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+	(while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &)
 	sudo xcodebuild -license accept
 
     # The actual working part
@@ -281,49 +281,49 @@ mac_update_brew_casks() {
 
 mac_update() {
     p_info "Updating macOS..."
-    softwareupdate -ia &>/dev/null & spinner $!
+    ( softwareupdate -ia &>/dev/null & spinner $! )
 
     if [ $(which mas) ]; then
         clear_line
         p_info "Updating Mac App Store Apps..."
-        mas upgrade &>/dev/null & spinner $!
+        ( mas upgrade &>/dev/null & spinner $! )
     fi
 
     if [ $(which brew) ]; then
         clear_line
         p_info "Updating Homebrew..."
-        mac_update_brew &>/dev/null & spinner $!
+        ( mac_update_brew &>/dev/null & spinner $! )
         clear_line
         p_info "Updating Homebrew Casks..."
-        mac_update_brew_casks &>/dev/null & spinner $!
+        ( mac_update_brew_casks &>/dev/null & spinner $! )
         # Cleanup after updates
-        brew cleanup &>/dev/null & spinner $!
+        ( brew cleanup &>/dev/null & spinner $! )
     fi
 
     if [ $(which npm) ]; then
         clear_line
         p_info "Updating npm..."
-        npm install -g npm &>/dev/null & spinner $!
-        npm update -g &>/dev/null & spinner $!
+        ( npm install -g npm &>/dev/null & spinner $! )
+        ( npm update -g &>/dev/null & spinner $! )
     fi
 
     if [ $(which pip) ]; then
         clear_line
         p_info "Updating pip..."
-        pip list --outdated --format=freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U &>/dev/null & spinner $!
+        ( pip list --outdated --format=freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U &>/dev/null & spinner $! )
     fi
 
     if [ $(which gem) ]; then
         clear_line
         p_info "Updating gem..."
-        gem update --system &>/dev/null & spinner $!
-        gem update &>/dev/null & spinner $!
+        ( gem update --system &>/dev/null & spinner $! )
+        ( gem update &>/dev/null & spinner $! )
     fi
 
     if [ $(which vagrant) ]; then
         clear_line
         p_info "Updating Vagrant Plugins..."
-        vagrant plugin update &>/dev/null & spinner $!
+        ( vagrant plugin update &>/dev/null & spinner $! )
     fi
 
     clear_line
@@ -344,7 +344,7 @@ setup() {
 self_update() {
     p_info "Updating DevEnv..."
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
-    curl -sL $UPDATE_URL > $HOME/.bash_profile &>/dev/null & spinner $!
+    ( curl -sL $UPDATE_URL > $HOME/.bash_profile &>/dev/null & spinner $! )
     source $HOME/.bash_profile
     clear_line
     p_successln "DevEnv Updated!"
@@ -358,56 +358,56 @@ mac_cleanup() {
     p_logln "The process needs to run sudo commands and is going ask you to type your password."
 
 	sudo -v
-	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+	( while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null & )
 
     p_info "Cleaning up. This may take a while..."
 
     # Empty Trash
-	sudo rm -rfv /Volumes/*/.Trashes &>/dev/null & spinner $!
-	sudo rm -rfv ~/.Trash &>/dev/null & spinner $!
+	( sudo rm -rfv /Volumes/*/.Trashes &>/dev/null & spinner $! )
+	( sudo rm -rfv ~/.Trash &>/dev/null & spinner $! )
 	# User Caches and Logs
-	rm -rfv ~/Library/Caches/* &>/dev/null & spinner $!
-	rm -rfv ~/Library/logs/* &>/dev/null & spinner $!
+	( rm -rfv ~/Library/Caches/* &>/dev/null & spinner $! )
+	( rm -rfv ~/Library/logs/* &>/dev/null & spinner $! )
 	# System Caches and Logs
-	sudo rm -rfv /Library/Caches/* &>/dev/null & spinner $!
-	sudo rm -rfv /Library/logs/* &>/dev/null & spinner $!
-	sudo rm -rfv /var/log/* &>/dev/null & spinner $!
-	sudo rm -rfv /private/var/log/asl/*.asl &>/dev/null & spinner $!
-	sudo rm -rfv /Library/Logs/DiagnosticReports/* &>/dev/null & spinner $!
-	sudo rm -rfv /Library/Logs/Adobe/* &>/dev/null & spinner $!
-	rm -rfv ~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/* &>/dev/null & spinner $!
-	rm -rfv ~/Library/Logs/CoreSimulator/* &>/dev/null & spinner $!
+	( sudo rm -rfv /Library/Caches/* &>/dev/null & spinner $! )
+	( sudo rm -rfv /Library/logs/* &>/dev/null & spinner $! )
+	( sudo rm -rfv /var/log/* &>/dev/null & spinner $! )
+	( sudo rm -rfv /private/var/log/asl/*.asl &>/dev/null & spinner $! )
+	( sudo rm -rfv /Library/Logs/DiagnosticReports/* &>/dev/null & spinner $! )
+	( sudo rm -rfv /Library/Logs/Adobe/* &>/dev/null & spinner $! )
+	( rm -rfv ~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/* &>/dev/null & spinner $! )
+	( rm -rfv ~/Library/Logs/CoreSimulator/* &>/dev/null & spinner $! )
 	# Adobe Caches
-	sudo rm -rfv ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null & spinner $!
+	( sudo rm -rfv ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null & spinner $! )
 	# Private Folders
-	sudo rm -rfv /private/var/folders/* &>/dev/null & spinner $!
+	( sudo rm -rfv /private/var/folders/* &>/dev/null & spinner $! )
 	# iOS Apps, Backups and Photos Cache
-	rm -rfv ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null & spinner $!
-	rm -rfv ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null & spinner $!
+	( rm -rfv ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null & spinner $! )
+	( rm -rfv ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null & spinner $! )
 	rm -rfv ~/Pictures/iPhoto\ Library/iPod\ Photo\ Cache/*
 	# XCode Derived Data and Archives
-	rm -rfv ~/Library/Developer/Xcode/DerivedData/* &>/dev/null & spinner $!
-	rm -rfv ~/Library/Developer/Xcode/Archives/* &>/dev/null & spinner $!
+	( rm -rfv ~/Library/Developer/Xcode/DerivedData/* &>/dev/null & spinner $! )
+	( rm -rfv ~/Library/Developer/Xcode/Archives/* &>/dev/null & spinner $! )
 	# Homebrew Cache
-	brew cleanup --force -s &>/dev/null & spinner $!
-	rm -rfv /Library/Caches/Homebrew/* &>/dev/null & spinner $!
-	brew tap --repair &>/dev/null & spinner $!
+	( brew cleanup --force -s &>/dev/null & spinner $! )
+	( rm -rfv /Library/Caches/Homebrew/* &>/dev/null & spinner $! )
+	( brew tap --repair &>/dev/null & spinner $! )
 	# Old gems
-	gem cleanup &>/dev/null & spinner $!
+	( gem cleanup &>/dev/null & spinner $! )
 	# Old Dockers
 	if type "docker" > /dev/null; then
-		docker container prune -f &>/dev/null & spinner $!
-		docker image prune -f &>/dev/null & spinner $!
-		docker volume prune -f &>/dev/null & spinner $!
-		docker network prune -f &>/dev/null & spinner $!
+		( docker container prune -f &>/dev/null & spinner $! )
+		( docker image prune -f &>/dev/null & spinner $! )
+		( docker volume prune -f &>/dev/null & spinner $! )
+		( docker network prune -f &>/dev/null & spinner $! )
 	fi
 	# Memory
-	sudo purge & spinner $!
+	( sudo purge & spinner $! )
 
 	# Applications Caches
 	for x in $(ls ~/Library/Containers/)
 	do
-		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null & spinner $!
+		( rm -rfv ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null & spinner $! )
 	done
 
     clear_line
