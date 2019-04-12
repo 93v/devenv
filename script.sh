@@ -344,7 +344,7 @@ setup() {
 self_update() {
     p_info "Updating DevEnv..."
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
-    ( curl -sL $UPDATE_URL > $HOME/.bash_profile &>/dev/null & spinner $! )
+    ( curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $! )
     source $HOME/.bash_profile
     clear_line
     p_successln "DevEnv Updated!"
