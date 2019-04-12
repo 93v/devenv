@@ -76,10 +76,21 @@ p_successln() { p_success "$1"; echo; }
 p_infoln() { 	p_info "$1"; echo; }
 
 prompt() { read -p "$1 " -n 1 -r && echo; [[ $REPLY =~ ^[Yy]$ ]] && true || false; }
-# Usage
-# if prompt "ok? [y/N]"; then
-# 	echo 'OK'
-# fi
+
+spinner()
+{
+    local pid=$1
+    local delay=0.5
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
 
 # Util functions
 free-port() { kill "$(lsof -t -i :$1)"; }
@@ -121,7 +132,7 @@ mac_install_command_line_tools() {
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
 	touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
-	softwareupdate -i "$clt" >/dev/null 2>&1
+	softwareupdate -i "$clt" >/dev/null 2>&1 & spinner $!
 	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
     [[ "$1" != "--silent" ]] && p_successln "Command Line Tools Installed!"
 }
@@ -134,7 +145,7 @@ mac_smart_install_command_line_tools() {
 			if [ ! -e "/$file" ]; then ((count++)); break; fi
 		done
 		if (( count > 0 )); then
-			sudo rm -rfv /Library/Developer/CommandLineTools
+			sudo rm -rfv /Library/Developer/CommandLineTools & spinner $!
 			mac_install_command_line_tools --silent
 		fi
 	else
@@ -218,10 +229,18 @@ mac_setup() {
         fi
     fi
 
-    if $install_all || $configure_mac; then mac_configure; fi
-    if $install_all || $install_command_line_tools; then mac_smart_install_command_line_tools; fi
-    if $install_all || $install_brew; then mac_install_brew; fi
-    if $install_all || $install_mas; then mac_install_mas; fi
+    if $install_all || $configure_mac; then
+        mac_configure
+    fi
+    if $install_all || $install_command_line_tools; then
+        mac_smart_install_command_line_tools
+    fi
+    if $install_all || $install_brew; then
+        mac_install_brew
+    fi
+    if $install_all || $install_mas; then
+        mac_install_mas
+    fi
 
     # New line
     echo
@@ -229,6 +248,73 @@ mac_setup() {
 
     # Deactivating sudo for the session
     sudo -k
+}
+
+mac_update_brew() {
+    [ ! $(which brew) ] && mac_smart_install_brew
+	cd "$(brew --repo)" && git fetch origin && git reset --hard origin/master
+	cd -
+	brew update && brew upgrade
+	brew uninstall --force --ignore-dependencies node-build
+	brew install --HEAD node-build
+}
+
+mac_update_brew_casks() {
+    [ ! $(which brew) ] && mac_smart_install_brew
+	brew cask upgrade
+	for app in $(brew cask list); do
+		current_version=$(ls -1 /usr/local/Caskroom/${app}/.metadata/ | head -n 1)
+		av=$(brew cask info ${app} | tail -n +1 | head -n 1 | cut -d ' ' -f 2)
+		if [[ ${current_version} != ${av} ]] || [[ ${current_version} == "latest" ]]; then
+			brew cask uninstall "${app}" --force
+			brew cask install "${app}"
+		fi
+	done
+}
+
+mac_update() {
+    p_info "Updating "
+
+    p_info "macOS"
+    softwareupdate -ia &>/dev/null & spinner $!
+
+    if [ $(which mas) ]; then
+        p_info ", Mac App Store Apps"
+        mas upgrade &>/dev/null & spinner $!
+    fi
+
+    if [ $(which brew) ]; then
+        p_info ", Homebrew"
+        mac_update_brew &>/dev/null & spinner $!
+        p_info ", Homebrew Casks"
+        mac_update_brew_casks &>/dev/null & spinner $!
+        # Cleanup after updates
+        brew cleanup &>/dev/null & spinner $!
+    fi
+
+    if [ $(which npm) ]; then
+        p_info ", npm"
+        npm install -g npm &>/dev/null & spinner $!
+        npm update -g &>/dev/null & spinner $!
+    fi
+
+    if [ $(which pip) ]; then
+        p_info ", pip"
+        pip list --outdated --format=freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U &>/dev/null & spinner $!
+    fi
+
+    if [ $(which gem) ]; then
+        p_info ", gem"
+        gem update --system && gem update &>/dev/null & spinner $!
+    fi
+
+    if [ $(which vagrant) ]; then
+        p_info ", Vagrant Plugins"
+        vagrant plugin update &>/dev/null & spinner $!
+    fi
+
+    p_info "... "
+    p_successln "Updated!!"
 }
 
 linux_setup() {
@@ -252,56 +338,68 @@ self_update() {
 
 # macOS Cleanup
 mac_cleanup() {
+    # Keep-alive: update existing `sudo` time stamp until the script has finished.
+	clear
+    p_infoln "Starting the Cleanup process..."
+    p_logln "The process need to run sudo commands and is going ask you to type your password."
+
+	sudo -v
+	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
     p_info "Cleaning up. This may take a while... "
+
     # Empty Trash
-	sudo rm -rfv /Volumes/*/.Trashes &>/dev/null
-	sudo rm -rfv ~/.Trash &>/dev/null
+	sudo rm -rfv /Volumes/*/.Trashes &>/dev/null & spinner $!
+	sudo rm -rfv ~/.Trash &>/dev/null & spinner $!
 	# User Caches and Logs
-	rm -rfv ~/Library/Caches/* &>/dev/null
-	rm -rfv ~/Library/logs/* &>/dev/null
+	rm -rfv ~/Library/Caches/* &>/dev/null & spinner $!
+	rm -rfv ~/Library/logs/* &>/dev/null & spinner $!
 	# System Caches and Logs
-	sudo rm -rfv /Library/Caches/* &>/dev/null
-	sudo rm -rfv /Library/logs/* &>/dev/null
-	sudo rm -rfv /var/log/* &>/dev/null
-	sudo rm -rfv /private/var/log/asl/*.asl &>/dev/null
-	sudo rm -rfv /Library/Logs/DiagnosticReports/* &>/dev/null
-	sudo rm -rfv /Library/Logs/Adobe/* &>/dev/null
-	rm -rfv ~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/* &>/dev/null
-	rm -rfv ~/Library/Logs/CoreSimulator/* &>/dev/null
+	sudo rm -rfv /Library/Caches/* &>/dev/null & spinner $!
+	sudo rm -rfv /Library/logs/* &>/dev/null & spinner $!
+	sudo rm -rfv /var/log/* &>/dev/null & spinner $!
+	sudo rm -rfv /private/var/log/asl/*.asl &>/dev/null & spinner $!
+	sudo rm -rfv /Library/Logs/DiagnosticReports/* &>/dev/null & spinner $!
+	sudo rm -rfv /Library/Logs/Adobe/* &>/dev/null & spinner $!
+	rm -rfv ~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/* &>/dev/null & spinner $!
+	rm -rfv ~/Library/Logs/CoreSimulator/* &>/dev/null & spinner $!
 	# Adobe Caches
-	sudo rm -rfv ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null
+	sudo rm -rfv ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null & spinner $!
 	# Private Folders
-	sudo rm -rfv /private/var/folders/* &>/dev/null
+	sudo rm -rfv /private/var/folders/* &>/dev/null & spinner $!
 	# iOS Apps, Backups and Photos Cache
-	rm -rfv ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null
-	rm -rfv ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null
+	rm -rfv ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null & spinner $!
+	rm -rfv ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null & spinner $!
 	rm -rfv ~/Pictures/iPhoto\ Library/iPod\ Photo\ Cache/*
 	# XCode Derived Data and Archives
-	rm -rfv ~/Library/Developer/Xcode/DerivedData/* &>/dev/null
-	rm -rfv ~/Library/Developer/Xcode/Archives/* &>/dev/null
+	rm -rfv ~/Library/Developer/Xcode/DerivedData/* &>/dev/null & spinner $!
+	rm -rfv ~/Library/Developer/Xcode/Archives/* &>/dev/null & spinner $!
 	# Homebrew Cache
-	brew cleanup --force -s &>/dev/null
-	rm -rfv /Library/Caches/Homebrew/* &>/dev/null
-	brew tap --repair &>/dev/null
+	brew cleanup --force -s &>/dev/null & spinner $!
+	rm -rfv /Library/Caches/Homebrew/* &>/dev/null & spinner $!
+	brew tap --repair &>/dev/null & spinner $!
 	# Old gems
-	gem cleanup &>/dev/null
+	gem cleanup &>/dev/null & spinner $!
 	# Old Dockers
 	if type "docker" > /dev/null; then
-		docker container prune -f &>/dev/null
-		docker image prune -f &>/dev/null
-		docker volume prune -f &>/dev/null
-		docker network prune -f &>/dev/null
+		docker container prune -f &>/dev/null & spinner $!
+		docker image prune -f &>/dev/null & spinner $!
+		docker volume prune -f &>/dev/null & spinner $!
+		docker network prune -f &>/dev/null & spinner $!
 	fi
 	# Memory
-	sudo purge
+	sudo purge & spinner $!
 
 	# Applications Caches
 	for x in $(ls ~/Library/Containers/)
 	do
-		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null
+		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null & spinner $!
 	done
 
     p_successln "Cleanup Completed!"
+
+    # Deactivating sudo for the session
+    sudo -k
 }
 
 # Aliases
