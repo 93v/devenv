@@ -344,7 +344,7 @@ setup() {
 self_update() {
     p_info "Updating DevEnv..."
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
-    curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $!
+    curl -sL $UPDATE_URL > $HOME/.bash_profile &>/dev/null & spinner $!
     source $HOME/.bash_profile
     clear_line
     p_successln "DevEnv Updated!"
@@ -420,6 +420,7 @@ mac_cleanup() {
 # Aliases
 alias r="source $HOME/.bash_profile"
 alias c="mac_cleanup"
+alias u="mac_update"
 alias selfu="self_update"
 # slefu is a usual typo
 alias slefu="self_update"
