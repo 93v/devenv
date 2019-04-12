@@ -117,7 +117,7 @@ if [[ ${machine} == UNKNOWN* ]]; then
 fi
 
 mac_configure() {
-    p_info "Configuring macOS... "
+    p_info "Configuring macOS..."
     defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
 	defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 	defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
@@ -132,7 +132,7 @@ mac_configure() {
 }
 
 mac_install_command_line_tools() {
-    [[ "$1" != "--silent" ]] && p_info "Installing Command Line Tools... "
+    [[ "$1" != "--silent" ]] && p_info "Installing Command Line Tools..."
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
 	touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
@@ -142,7 +142,7 @@ mac_install_command_line_tools() {
 }
 
 mac_smart_install_command_line_tools() {
-    p_info "Installing Command Line Tools... "
+    p_info "Installing Command Line Tools..."
     if pkgutil --pkg-info com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
 		count=0
 		for file in $(pkgutil --files com.apple.pkg.CLTools_Executables); do
@@ -280,48 +280,54 @@ mac_update_brew_casks() {
 }
 
 mac_update() {
-    p_info "Updating "
-
-    p_info "macOS"
+    p_info "Updating macOS..."
     softwareupdate -ia &>/dev/null & spinner $!
 
     if [ $(which mas) ]; then
-        p_info ", Mac App Store Apps"
+        clear_line
+        p_info "Updating Mac App Store Apps..."
         mas upgrade &>/dev/null & spinner $!
     fi
 
     if [ $(which brew) ]; then
-        p_info ", Homebrew"
+        clear_line
+        p_info "Updating Homebrew..."
         mac_update_brew &>/dev/null & spinner $!
-        p_info ", Homebrew Casks"
+        clear_line
+        p_info "Updating Homebrew Casks..."
         mac_update_brew_casks &>/dev/null & spinner $!
         # Cleanup after updates
         brew cleanup &>/dev/null & spinner $!
     fi
 
     if [ $(which npm) ]; then
-        p_info ", npm"
+        clear_line
+        p_info "Updating npm..."
         npm install -g npm &>/dev/null & spinner $!
         npm update -g &>/dev/null & spinner $!
     fi
 
     if [ $(which pip) ]; then
-        p_info ", pip"
+        clear_line
+        p_info "Updating pip..."
         pip list --outdated --format=freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U &>/dev/null & spinner $!
     fi
 
     if [ $(which gem) ]; then
-        p_info ", gem"
-        gem update --system && gem update &>/dev/null & spinner $!
+        clear_line
+        p_info "Updating gem..."
+        gem update --system &>/dev/null & spinner $!
+        gem update &>/dev/null & spinner $!
     fi
 
     if [ $(which vagrant) ]; then
-        p_info ", Vagrant Plugins"
+        clear_line
+        p_info "Updating Vagrant Plugins..."
         vagrant plugin update &>/dev/null & spinner $!
     fi
 
-    p_info "... "
-    p_successln "Updated!!"
+    clear_line
+    p_successln "Updated!"
 }
 
 linux_setup() {
@@ -336,7 +342,7 @@ setup() {
 
 # Self Update
 self_update() {
-    p_info "Updating DevEnv... "
+    p_info "Updating DevEnv..."
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
     curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $!
     source $HOME/.bash_profile
@@ -354,7 +360,7 @@ mac_cleanup() {
 	sudo -v
 	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
-    p_info "Cleaning up. This may take a while... "
+    p_info "Cleaning up. This may take a while..."
 
     # Empty Trash
 	sudo rm -rfv /Volumes/*/.Trashes &>/dev/null & spinner $!
