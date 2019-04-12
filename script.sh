@@ -184,7 +184,7 @@ mac_setup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
     p_infoln "Starting the Setup process..."
-    p_logln "The process needs to run sudo commands and is going ask you to type your password."
+    p_logln "The process needs to run sudo commands and is going to ask you to type your password."
 
 	sudo -v
 	(while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &)
@@ -355,7 +355,7 @@ mac_cleanup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
     p_infoln "Starting the Cleanup process..."
-    p_logln "The process needs to run sudo commands and is going ask you to type your password."
+    p_logln "The process needs to run sudo commands and is going to ask you to type your password."
 
 	sudo -v
 	( while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null & )
