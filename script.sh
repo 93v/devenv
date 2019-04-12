@@ -77,10 +77,9 @@ p_infoln() { 	p_info "$1"; echo; }
 
 prompt() { read -p "$1 " -n 1 -r && echo; [[ $REPLY =~ ^[Yy]$ ]] && true || false; }
 
-spinner()
-{
+spinner() {
     local pid=$1
-    local delay=0.5
+    local delay=0.75
     local spinstr='|/-\'
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
@@ -90,6 +89,10 @@ spinner()
         printf "\b\b\b\b\b\b"
     done
     printf "    \b\b\b\b"
+}
+
+clear_line() {
+    printf "\033[2K\r"
 }
 
 # Util functions
@@ -124,6 +127,7 @@ mac_configure() {
 	defaults write com.apple.finder ShowStatusBar -bool true
 	defaults write com.apple.finder ShowPathbar -bool true
 	defaults write com.apple.finder DisableAllAnimations -bool true
+    clear_line
     p_successln "macOS Configured!"
 }
 
@@ -134,7 +138,7 @@ mac_install_command_line_tools() {
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
 	softwareupdate -i "$clt" >/dev/null 2>&1 & spinner $!
 	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
-    [[ "$1" != "--silent" ]] && p_successln "Command Line Tools Installed!"
+    [[ "$1" != "--silent" ]] && clear_line && p_successln "Command Line Tools Installed!"
 }
 
 mac_smart_install_command_line_tools() {
@@ -151,6 +155,7 @@ mac_smart_install_command_line_tools() {
 	else
 		mac_install_command_line_tools --silent
 	fi
+    clear_line
     p_successln "Command Line Tools Installed!"
 }
 
@@ -158,6 +163,7 @@ mac_install_brew() {
     p_info "Installing Homebrew..."
     mac_smart_install_command_line_tools
     echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" >/dev/null 2>&1
+    clear_line
     p_successln "Homebrew Installed!"
 }
 
@@ -170,6 +176,7 @@ mac_install_mas() {
     mac_smart_install_brew
     [ $(which brew) ] && brew install mas >/dev/null 2>&1
     [ $(which xcodebuild) ] && sudo xcodebuild -license accept >/dev/null 2>&1
+    clear_line
     p_successln "Mac App Store command line interface Installed!"
 }
 
@@ -177,7 +184,7 @@ mac_setup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
     p_infoln "Starting the Setup process..."
-    p_logln "The process need to run sudo commands and is going ask you to type your password."
+    p_logln "The process needs to run sudo commands and is going ask you to type your password."
 
 	sudo -v
 	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
@@ -331,8 +338,9 @@ setup() {
 self_update() {
     p_info "Updating DevEnv... "
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
-    curl -sL $UPDATE_URL > $HOME/.bash_profile
+    curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $!
     source $HOME/.bash_profile
+    clear_line
     p_successln "DevEnv Updated!"
 }
 
@@ -341,7 +349,7 @@ mac_cleanup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
     p_infoln "Starting the Cleanup process..."
-    p_logln "The process need to run sudo commands and is going ask you to type your password."
+    p_logln "The process needs to run sudo commands and is going ask you to type your password."
 
 	sudo -v
 	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
@@ -396,6 +404,7 @@ mac_cleanup() {
 		rm -rfv ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null & spinner $!
 	done
 
+    clear_line
     p_successln "Cleanup Completed!"
 
     # Deactivating sudo for the session
