@@ -132,37 +132,35 @@ mac_configure() {
 }
 
 mac_install_command_line_tools() {
-    [[ "$1" != "--silent" ]] && p_info "Installing Command Line Tools..."
+    p_info "Installing Command Line Tools..."
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
 	touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
-	( softwareupdate -i "$clt" >/dev/null 2>&1 & spinner $! )
+	( softwareupdate -i "$clt" &>/dev/null & spinner $! )
 	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
-    [[ "$1" != "--silent" ]] && clear_line && p_successln "Command Line Tools Installed!"
+    clear_line
+    p_successln "Command Line Tools Installed!"
 }
 
 mac_smart_install_command_line_tools() {
-    p_info "Installing Command Line Tools..."
-    if pkgutil --pkg-info com.apple.pkg.CLTools_Executables >/dev/null 2>&1; then
+    if pkgutil --pkg-info com.apple.pkg.CLTools_Executables &>/dev/null; then
 		count=0
 		for file in $(pkgutil --files com.apple.pkg.CLTools_Executables); do
 			if [ ! -e "/$file" ]; then ((count++)); break; fi
 		done
 		if (( count > 0 )); then
 			( sudo rm -rfv /Library/Developer/CommandLineTools & spinner $! )
-			mac_install_command_line_tools --silent
+			mac_install_command_line_tools
 		fi
 	else
-		mac_install_command_line_tools --silent
+		mac_install_command_line_tools
 	fi
-    clear_line
-    p_successln "Command Line Tools Installed!"
 }
 
 mac_install_brew() {
     p_info "Installing Homebrew..."
     mac_smart_install_command_line_tools
-    echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" >/dev/null 2>&1
+    ( echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" &>/dev/null & spinner $! )
     clear_line
     p_successln "Homebrew Installed!"
 }
@@ -172,19 +170,59 @@ mac_smart_install_brew() {
 }
 
 mac_install_mas() {
-    p_info "Installing Mac App Store command line interface..."
+    p_infoln "Installing Mac App Store command line interface..."
+    p_logln "The process needs to run sudo commands and might ask for your password."
+
+	sudo -v
+	(while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &)
+
     mac_smart_install_brew
     [ $(which brew) ] && brew install mas >/dev/null 2>&1
     [ $(which xcodebuild) ] && sudo xcodebuild -license accept >/dev/null 2>&1
+
     clear_line
     p_successln "Mac App Store command line interface Installed!"
+
+    # Deactivating sudo for the session
+    sudo -k
+}
+
+mac_install_mac_apps() {
+    p_infoln "Installing macOS Apps..."
+    local APPS=(Numbers Pages Spark Xcode)
+
+    local answers=()
+
+    install_all=false
+    [[ "$1" = "--all" ]] && install_all=true
+
+    for index in ${!APPS[*]}; do
+        if $install_all; then
+            answers[$index]=true
+        else
+            p_info "Do you want to install ${APPS[$index]}?"
+            if prompt "[y/N]"; then answers[$index]=true; fi
+        fi
+    done
+
+    for index in ${!answers[*]}; do
+        if ${answers[$index]}; then
+            [ ! $(which mas) ] && mac_install_mas
+            clear_line
+            p_info "Installing ${APPS[$index]}..."
+            mas lucky ${APPS[$index]} &>/dev/null & spinner $!
+        fi
+    done
+
+    clear_line
+    p_successln "macOS Apps Installed!"
 }
 
 mac_setup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
     p_infoln "Starting the Setup process..."
-    p_logln "The process needs to run sudo commands and is going to ask you to type your password."
+    p_logln "The process needs to run sudo commands and might ask for your password."
 
 	sudo -v
 	(while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &)
@@ -198,6 +236,7 @@ mac_setup() {
     install_command_line_tools=false
     install_brew=false
     install_mas=false
+    install_mac_apps=false
 
     if [ "$install_all" != true ]; then
         p_info "Do you want to configure macOS? "
@@ -234,19 +273,25 @@ mac_setup() {
             p_logln "Will automatically install Command Line Tools."
             install_command_line_tools=true
         fi
+
+        p_info "Do you want to install Mac Apps? "
+        if prompt "[y/N]"; then install_mac_apps=true; fi
     fi
 
     if $install_all || $configure_mac; then
         mac_configure
     fi
-    if $install_all || $install_command_line_tools; then
-        mac_smart_install_command_line_tools
-    fi
+    # if $install_all || $install_command_line_tools; then
+    #     mac_smart_install_command_line_tools
+    # fi
     if $install_all || $install_brew; then
         mac_install_brew
     fi
     if $install_all || $install_mas; then
         mac_install_mas
+    fi
+    if $install_all || $install_mac_apps; then
+        mac_install_mac_apps "$@"
     fi
 
     # New line
@@ -355,7 +400,7 @@ mac_cleanup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
     p_infoln "Starting the Cleanup process..."
-    p_logln "The process needs to run sudo commands and is going to ask you to type your password."
+    p_logln "The process needs to run sudo commands and might ask for your password."
 
 	sudo -v
 	( while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null & )
@@ -425,6 +470,7 @@ alias selfu="self_update"
 # slefu is a usual typo
 alias slefu="self_update"
 
+# Initializer script
 if [[ ${machine} == "Mac" ]]; then
 	export PATH=$HOME/bin:/opt/local/bin:/opt/local/sbin:/usr/local/opt/ruby/bin:/usr/local/sbin:$PATH
 	export JAVA_HOME=$(/usr/libexec/java_home)
