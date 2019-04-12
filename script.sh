@@ -418,7 +418,7 @@ mac_cleanup() {
 }
 
 # Aliases
-alias r="source $HOME/.bash_profile"
+alias r="source $HOME/.bash_profile && p_successln \"Refreshed!\""
 alias c="mac_cleanup"
 alias u="mac_update"
 alias selfu="self_update"
