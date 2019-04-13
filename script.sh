@@ -418,9 +418,9 @@ mac_setup() {
     if $install_all || $configure_mac; then
         mac_configure
     fi
-    # if $install_all || $install_command_line_tools; then
-    #     mac_smart_install_command_line_tools
-    # fi
+    if $install_all || $install_command_line_tools; then
+        mac_smart_install_command_line_tools
+    fi
     if $install_all || $install_brew; then
         mac_install_brew
     fi
