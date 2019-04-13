@@ -196,17 +196,15 @@ mac_install_mac_apps() {
     install_all=false
     [[ "$1" = "--all" ]] && install_all=true
 
-    for index in ${!APPS[*]}; do
-        if $install_all; then
-            answers[$index]=true
-        else
+    if [ "$install_all" != true ]; then
+        for index in ${!APPS[*]}; do
             p_info "Do you want to install ${APPS[$index]}?"
             if prompt "[y/N]"; then answers[$index]=true; fi
-        fi
-    done
+        done
+    fi
 
     for index in ${!answers[*]}; do
-        if ${answers[$index]}; then
+        if ${answers[$index]} || $install_all; then
             [ ! $(which mas) ] && mac_install_mas
             clear_line
             p_info "Installing ${APPS[$index]}..."
