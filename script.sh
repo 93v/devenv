@@ -193,27 +193,135 @@ mac_install_mac_apps() {
 
     local answers=()
 
-    install_all=false
+    local install_all=false
     [[ "$1" = "--all" ]] && install_all=true
 
     if [ "$install_all" != true ]; then
         for index in ${!APPS[*]}; do
-            p_info "Do you want to install ${APPS[$index]}?"
+            p_info "Do you want to install "
+            p_success "${APPS[$index]}"
+            p_info " ?"
             if prompt "[y/N]"; then answers[$index]=true; fi
         done
     fi
 
-    for index in ${!answers[*]}; do
-        if ${answers[$index]} || $install_all; then
+    for index in ${!APPS[*]}; do
+        if [[ ${answers[$index]} = true || $install_all = true ]]; then
             [ ! $(which mas) ] && mac_install_mas
             clear_line
-            p_info "Installing ${APPS[$index]}..."
-            mas lucky ${APPS[$index]} &>/dev/null & spinner $!
+            p_info "Installing "
+            p_success "${APPS[$index]}"
+            p_info " ..."
+            ( mas lucky ${APPS[$index]} &>/dev/null & spinner $! )
         fi
     done
 
     clear_line
     p_successln "macOS Apps Installed!"
+}
+
+mac_install_brew_packages() {
+    p_infoln "Installing Homebrew Packages..."
+    local PACKAGES=(
+        bash
+        bash-completion
+        brew-cask-completion
+        gem-completion
+        git
+        goenv
+        mas
+        nodenv
+        pip-completion
+        pyenv
+        rbenv
+        ruby-completion
+        tmux
+        vim
+    )
+
+    local answers=()
+
+    local install_all=false
+    [[ "$1" = "--all" ]] && install_all=true
+
+    if [ "$install_all" != true ]; then
+        for index in ${!PACKAGES[*]}; do
+            p_info "Do you want to install "
+            p_success "${PACKAGES[$index]}"
+            p_info " ?"
+            if prompt "[y/N]"; then answers[$index]=true; fi
+        done
+    fi
+
+    for index in ${!PACKAGES[*]}; do
+        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+            [ ! $(which brew) ] && mac_install_brew
+            clear_line
+            p_info "Installing "
+            p_success "${PACKAGES[$index]}"
+            p_info " from Homebrew..."
+            ( brew install ${PACKAGES[$index]} &>/dev/null & spinner $! )
+            if [ "${PACKAGES[$index]}" = "nodenv" ]; then
+                ( brew unlink node-build &>/dev/null & spinner $! )
+                ( brew install --HEAD node-build &>/dev/null & spinner $! )
+                ( brew link node-build &>/dev/null & spinner $! )
+            fi
+        fi
+    done
+
+    clear_line
+    p_successln "Homebrew Packages Installed!"
+}
+
+mac_install_brew_casks() {
+    p_infoln "Installing Homebrew Casks..."
+    local CASKS=(
+        authy
+        bitwarden
+        caskroom/fonts/font-fira-code
+        docker
+        iterm2
+        java
+        slack
+        spectacle
+        the-unarchiver
+        visual-studio-code-insiders
+    )
+
+    local answers=()
+
+    local install_all=false
+    [[ "$1" = "--all" ]] && install_all=true
+
+    if [ "$install_all" != true ]; then
+        for index in ${!CASKS[*]}; do
+            p_info "Do you want to install "
+            p_success "${CASKS[$index]}"
+            p_info " ?"
+            if prompt "[y/N]"; then answers[$index]=true; fi
+        done
+    fi
+
+    for index in ${!CASKS[*]}; do
+        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+            [ ! $(which brew) ] && mac_install_brew
+            clear_line
+            p_info "Installing "
+            p_success "${CASKS[$index]}"
+            p_info " from Homebrew..."
+            ( brew cask install ${CASKS[$index]} &>/dev/null & spinner $! )
+            if [ "${CASKS[$index]}" = "visual-studio-code-insiders" ]; then
+                VSCODE_PLUGINS=( Shan.code-settings-sync )
+                for plugin in ${VSCODE_PLUGINS[@]}; do
+                    ( code-insiders --install-extension ${plugin} &>/dev/null & spinner $! )
+                done
+                ( [[ $(pgrep Code) && $(pgrep Electron) ]] && kill -9 $(pgrep Code) && kill -9 $(pgrep Electron) && code-insiders &>/dev/null & spinner $!)
+            fi
+        fi
+    done
+
+    clear_line
+    p_successln "Homebrew Packages Installed!"
 }
 
 mac_setup() {
@@ -235,6 +343,8 @@ mac_setup() {
     install_brew=false
     install_mas=false
     install_mac_apps=false
+    install_brew_packages=false
+    install_brew_casks=false
 
     if [ "$install_all" != true ]; then
         p_info "Do you want to configure macOS? "
@@ -265,7 +375,36 @@ mac_setup() {
             install_brew=true
         fi
 
-        # TODO: find a better way to avoid duplicates
+        if $install_brew && ! $install_command_line_tools; then
+            p_log "Homebrew installation requires Command Line Tools. "
+            p_logln "Will automatically install Command Line Tools."
+            install_command_line_tools=true
+        fi
+
+        p_info "Do you want to install Homebrew Packages? "
+        if prompt "[y/N]"; then install_brew_packages=true; fi
+
+        if $install_brew_packages && ! $install_brew && [ ! $(which brew) ]; then
+            p_log "Homebrew Packages installation requires Homebrew. "
+            p_logln "Will automatically install Homebrew."
+            install_brew=true
+        fi
+
+        if $install_brew && ! $install_command_line_tools; then
+            p_log "Homebrew installation requires Command Line Tools. "
+            p_logln "Will automatically install Command Line Tools."
+            install_command_line_tools=true
+        fi
+
+        p_info "Do you want to install Homebrew Casks? "
+        if prompt "[y/N]"; then install_brew_casks=true; fi
+
+        if $install_brew_casks && ! $install_brew && [ ! $(which brew) ]; then
+            p_log "Homebrew Casks installation requires Homebrew. "
+            p_logln "Will automatically install Homebrew."
+            install_brew=true
+        fi
+
         if $install_brew && ! $install_command_line_tools; then
             p_log "Homebrew installation requires Command Line Tools. "
             p_logln "Will automatically install Command Line Tools."
@@ -290,6 +429,12 @@ mac_setup() {
     fi
     if $install_all || $install_mac_apps; then
         mac_install_mac_apps "$@"
+    fi
+    if $install_all || $install_brew_packages; then
+        mac_install_brew_packages "$@"
+    fi
+    if $install_all || $install_brew_casks; then
+        mac_install_brew_casks "$@"
     fi
 
     # New line
