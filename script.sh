@@ -324,6 +324,85 @@ mac_install_brew_casks() {
     p_successln "Homebrew Casks Installed!"
 }
 
+mac_install_programming_language_env() {
+    [ ! $(which brew) ] && mac_install_brew
+}
+
+mac_install_programming_language_from_env() {
+    unset vs; unset version; unset lv; unset av; unset v2i
+	case $1 in
+		rb*) 	vs=$(curl -sL https://www.ruby-lang.org/en/downloads | sed -n '/.*ruby-\(.*\).tar.gz.*/{s//\1/p;}') ;;
+		py*) 	vs=$(curl -sL https://www.python.org/doc/versions | sed -n '/.*release\/\(.*\)\/\".*/{s//\1/p;}') ;;
+        # Latest stable
+		# nod*) 	vs=$(curl -sL https://nodejs.org/download/release/index.tab | awk '($10 != "-" && NR != 1) { print $1; exit }') ;;
+        # Latest
+		nod*) 	vs=$(curl -sL https://nodejs.org/download/release/index.tab | awk '(NR != 1) { print $1; exit }') ;;
+		go*) 	vs=$(curl -sL https://golang.org/dl | sed -n '/.*go\(.*\).src.tar.gz.*/{s//\1/p;}') ;;
+		*) return ;;
+	esac
+
+	for v in $vs; do [ -z "$lv" ] && lv=${v}; done
+	[[ $1 == nod* ]] && lv=${lv:1}
+	[[ ${lv} ]] && for av in $($1env install --list); do [[ ${av} == ${lv}* ]] && v2i=${av}; done
+	[[ ${v2i} ]] && yes | $1env install ${v2i}; $1env global ${v2i} || p_alertln "\"$1 $lv\" is not available through \"$1env\""
+    [[ $1 == nod* ]] && npm i -g npm
+}
+
+mac_install_programming_language() {
+    # echo $1
+    local abbreviation
+    case $1 in
+		go*) 	    abbreviation=go ;;
+		node*) 	    abbreviation=nod ;;
+		python*) 	abbreviation=py ;;
+		ruby*) 	    abbreviation=rb ;;
+		*) return ;;
+	esac
+
+    if [ $(which $abbreviation"env") ]; then
+        mac_install_programming_language_env $abbreviation"env"
+        mac_install_programming_language_from_env $abbreviation
+    fi
+}
+
+mac_install_programming_languages() {
+    p_infoln "Installing Programming Languages..."
+    local LANGS=(
+        go
+        node
+        # python
+        # ruby
+    )
+
+    local answers=()
+
+    local install_all=false
+    [[ "$1" = "--all" ]] && install_all=true
+
+    if [ "$install_all" != true ]; then
+        for index in ${!LANGS[*]}; do
+            p_info "Do you want to install "
+            p_success "${LANGS[$index]}"
+            p_info " ?"
+            if prompt "[y/N]"; then answers[$index]=true; fi
+        done
+    fi
+
+    for index in ${!LANGS[*]}; do
+        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+            [ ! $(which brew) ] && mac_install_brew
+            clear_line
+            p_info "Installing "
+            p_success "${LANGS[$index]}"
+            p_info " from Homebrew..."
+            ( mac_install_programming_language ${LANGS[$index]} &>/dev/null & spinner $! )
+        fi
+    done
+
+    clear_line
+    p_successln "Programming Languages Installed!"
+}
+
 mac_setup() {
     # Keep-alive: update existing `sudo` time stamp until the script has finished.
 	clear
@@ -345,6 +424,7 @@ mac_setup() {
     install_mac_apps=false
     install_brew_packages=false
     install_brew_casks=false
+    install_programming_languages=false
 
     if [ "$install_all" != true ]; then
         p_info "Do you want to configure macOS? "
@@ -411,6 +491,21 @@ mac_setup() {
             install_command_line_tools=true
         fi
 
+        p_info "Do you want to install Programming Languages? "
+        if prompt "[y/N]"; then install_programming_languages=true; fi
+
+        if $install_programming_languages && ! $install_brew && [ ! $(which brew) ]; then
+            p_log "Programming Languages installation requires Homebrew. "
+            p_logln "Will automatically install Homebrew."
+            install_brew=true
+        fi
+
+        if $install_brew && ! $install_command_line_tools; then
+            p_log "Homebrew installation requires Command Line Tools. "
+            p_logln "Will automatically install Command Line Tools."
+            install_command_line_tools=true
+        fi
+
         p_info "Do you want to install Mac Apps? "
         if prompt "[y/N]"; then install_mac_apps=true; fi
     fi
@@ -435,6 +530,9 @@ mac_setup() {
     fi
     if $install_all || $install_brew_casks; then
         mac_install_brew_casks "$@"
+    fi
+    if $install_all || $install_programming_languages; then
+        mac_install_programming_languages "$@"
     fi
 
     # New line
