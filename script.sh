@@ -278,14 +278,16 @@ mac_install_brew_casks() {
     local CASKS=(
         authy
         bitwarden
-        caskroom/fonts/font-fira-code
         docker
+        intellij-idea
         iterm2
-        java
         slack
         spectacle
         the-unarchiver
         visual-studio-code-insiders
+
+        # Fonts
+        caskroom/fonts/font-fira-code
     )
 
     local answers=()
@@ -369,9 +371,10 @@ mac_install_programming_languages() {
     p_infoln "Installing Programming Languages..."
     local LANGS=(
         go
+        java
         node
-        # python
-        # ruby
+        python
+        ruby
     )
 
     local answers=()
@@ -395,7 +398,11 @@ mac_install_programming_languages() {
             p_info "Installing "
             p_success "${LANGS[$index]}"
             p_info " from Homebrew..."
-            ( mac_install_programming_language ${LANGS[$index]} &>/dev/null & spinner $! )
+            if [[ "${LANGS[$index]}" = "java" ]]; then
+                ( brew cask install java &>/dev/null & spinner $! )
+            else
+                ( mac_install_programming_language ${LANGS[$index]} &>/dev/null & spinner $! )
+            fi
         fi
     done
 
