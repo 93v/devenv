@@ -321,7 +321,7 @@ mac_install_brew_casks() {
     done
 
     clear_line
-    p_successln "Homebrew Packages Installed!"
+    p_successln "Homebrew Casks Installed!"
 }
 
 mac_setup() {
