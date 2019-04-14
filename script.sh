@@ -794,7 +794,7 @@ if [[ ${machine} == "Mac" ]]; then
 	# alias code to code-insiders
 	[ ! $(which code) ] && [ $(which code-insiders) ] && alias code="code-insiders"
 
-	[ ! $(which brew) ] && [ -f $(brew --prefix)/etc/bash_completion ] && . $(brew --prefix)/etc/bash_completion
+	[ $(which brew) ] && [ -f $(brew --prefix)/etc/bash_completion ] && . $(brew --prefix)/etc/bash_completion
 
 	###-begin-npm-completion-###
 	#
