@@ -284,7 +284,7 @@ mac_install_brew_casks() {
         slack
         spectacle
         the-unarchiver
-        visual-studio-code-insiders
+        homebrew/cask-versions/visual-studio-code-insiders
 
         # Fonts
         caskroom/fonts/font-fira-code
