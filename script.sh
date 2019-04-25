@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Better printf function
+# Better print function
 p_print() {
 	string=$1
 	params=${@:2}
