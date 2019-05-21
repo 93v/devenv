@@ -96,9 +96,9 @@ clear_line() {
 }
 
 # Util functions
-free-port() { kill "$(lsof -t -i :$1)"; }
+free-port() { [ $(lsof -t -i:$1) ] && kill "$(lsof -t -i:$1)"; }
 
-kill-port() { kill -kill "$(lsof -t -i :$1)"; }
+kill-port() { [ $(lsof -t -i:$1) ] && kill -9 "$(lsof -t -i:$1)"; }
 
 # Getting the OS the script is running on
 os_name="$(uname -s)"
