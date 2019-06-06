@@ -233,6 +233,19 @@ mac_install_mac_apps() {
 mac_install_brew_packages() {
     p_infoln "Installing Homebrew Packages..."
     local PACKAGES=(
+        # asdf
+        # coreutils
+        # automake
+        # autoconf
+        # openssl
+        # libyaml
+        # readline
+        # libxslt
+        # libtool
+        # unixodbc
+        # unzip
+        # curl
+
         bash
         bash-completion
         brew-cask-completion
@@ -836,6 +849,9 @@ alias slefu="self_update"
 if [[ ${machine} == "Mac" ]]; then
 	export PATH=$HOME/bin:/opt/local/bin:/opt/local/sbin:/usr/local/opt/ruby/bin:/usr/local/sbin:$PATH
 	export JAVA_HOME=$(/usr/libexec/java_home)
+
+    # [[ $(which brew) ]] && [[ -f $(brew --prefix asdf)/asdf.sh ]] && . $(brew --prefix asdf)/asdf.sh
+    # [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && [[ $(which brew) ]] && [[ -f $(brew --prefix asdf)/etc/bash_completion.d/asdf.bash ]] && . $(brew --prefix asdf)/etc/bash_completion.d/asdf.bash
 
 	[[ $(which nodenv) ]] && eval "$(nodenv init -)"
 	[[ $(which pyenv) ]] && eval "$(pyenv init -)"
