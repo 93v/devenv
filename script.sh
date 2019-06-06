@@ -75,7 +75,10 @@ p_alertln() { 	p_alert "$1"; echo; }
 p_successln() { p_success "$1"; echo; }
 p_infoln() { 	p_info "$1"; echo; }
 
-prompt() { read -p "$1 " -n 1 -r && echo; [[ $REPLY =~ ^[Yy]$ ]] && true || false; }
+prompt() {
+    [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && read -p "$1 " -n1 -r && echo; [[ $REPLY =~ ^[Yy]$ ]] && true || false;
+    [[ $(ps -p $$ -ocomm=) == "-zsh" ]] && read -k "?$1 " && echo; [[ $REPLY =~ ^[Yy]$ ]] && true || false;
+}
 
 spinner() {
     local pid=$1
@@ -96,9 +99,9 @@ clear_line() {
 }
 
 # Util functions
-free-port() { [ $(lsof -t -i:$1) ] && kill "$(lsof -t -i:$1 | tr '\n' ' ')"; }
+free-port() { [[ $(lsof -t -i:$1) ]] && kill "$(lsof -t -i:$1 | tr '\n' ' ')"; }
 
-kill-port() { [ $(lsof -t -i:$1) ] && kill -9 "$(lsof -t -i:$1 | tr '\n' ' ')"; }
+kill-port() { [[ $(lsof -t -i:$1) ]] && kill -9 "$(lsof -t -i:$1 | tr '\n' ' ')"; }
 
 # Getting the OS the script is running on
 os_name="$(uname -s)"
@@ -134,10 +137,11 @@ mac_configure() {
 mac_install_command_line_tools() {
     p_info "Installing Command Line Tools..."
     clt_tmp="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
-	touch "$clt_tmp"
+    sudo rm -rf "$clt_tmp"
+	sudo touch "$clt_tmp"
 	clt=$(softwareupdate -l | awk '/\*\ Command Line Tools/ { $1=$1;print }' | tail -1 | sed 's/^[[ \t]]*//;s/[[ \t]]*$//;s/*//' | cut -c 2-)
 	( softwareupdate -i "$clt" &>/dev/null & spinner $! )
-	[[ -f "$clt_tmp" ]] && rm "$clt_tmp"
+	[[ -f "$clt_tmp" ]] && sudo rm "$clt_tmp"
     clear_line
     p_successln "Command Line Tools Installed!"
 }
@@ -194,10 +198,16 @@ mac_install_mac_apps() {
     local answers=()
 
     local install_all=false
-    [[ "$1" = "--all" ]] && install_all=true
+    [[ "$1" == "--all" ]] && install_all=true
 
-    if [ "$install_all" != true ]; then
-        for index in ${!APPS[*]}; do
+    local start=0
+
+    if [[ $(ps -p $$ -ocomm=) == "-zsh" ]]; then
+        start=1
+    fi
+
+    if [[ "$install_all" != true ]]; then
+        for ((index = ${start}; index < ${#APPS[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${APPS[$index]}"
             p_info " ?"
@@ -205,8 +215,8 @@ mac_install_mac_apps() {
         done
     fi
 
-    for index in ${!APPS[*]}; do
-        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+    for ((index = ${start}; index < ${#APPS[@]} + ${start}; index++)); do
+        if [[ ${answers[$index]} == true || $install_all == true ]]; then
             [ ! $(which mas) ] && mac_install_mas
             clear_line
             p_info "Installing "
@@ -237,15 +247,22 @@ mac_install_brew_packages() {
         ruby-completion
         tmux
         vim
+        zsh
     )
 
     local answers=()
 
     local install_all=false
-    [[ "$1" = "--all" ]] && install_all=true
+    [[ "$1" == "--all" ]] && install_all=true
+
+    local start=0
+
+    if [[ $(ps -p $$ -ocomm=) == "-zsh" ]]; then
+        start=1
+    fi
 
     if [ "$install_all" != true ]; then
-        for index in ${!PACKAGES[*]}; do
+        for ((index = ${start}; index < ${#PACKAGES[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${PACKAGES[$index]}"
             p_info " ?"
@@ -253,15 +270,15 @@ mac_install_brew_packages() {
         done
     fi
 
-    for index in ${!PACKAGES[*]}; do
-        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+    for ((index = ${start}; index < ${#PACKAGES[@]} + ${start}; index++)); do
+        if [[ ${answers[$index]} == true || $install_all == true ]]; then
             [ ! $(which brew) ] && mac_install_brew
             clear_line
             p_info "Installing "
             p_success "${PACKAGES[$index]}"
             p_info " from Homebrew..."
             ( brew install ${PACKAGES[$index]} &>/dev/null & spinner $! )
-            if [ "${PACKAGES[$index]}" = "nodenv" ]; then
+            if [ "${PACKAGES[$index]}" == "nodenv" ]; then
                 ( brew unlink node-build &>/dev/null & spinner $! )
                 ( brew install --HEAD node-build &>/dev/null & spinner $! )
                 ( brew link node-build &>/dev/null & spinner $! )
@@ -293,10 +310,17 @@ mac_install_brew_casks() {
     local answers=()
 
     local install_all=false
-    [[ "$1" = "--all" ]] && install_all=true
+    [[ "$1" == "--all" ]] && install_all=true
+
+    local start=0
+
+    if [[ $(ps -p $$ -ocomm=) == "-zsh" ]]; then
+        start=1
+    fi
+
 
     if [ "$install_all" != true ]; then
-        for index in ${!CASKS[*]}; do
+        for ((index = ${start}; index < ${#CASKS[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${CASKS[$index]}"
             p_info " ?"
@@ -304,15 +328,15 @@ mac_install_brew_casks() {
         done
     fi
 
-    for index in ${!CASKS[*]}; do
-        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+    for ((index = ${start}; index < ${#CASKS[@]} + ${start}; index++)); do
+        if [[ ${answers[$index]} == true || $install_all == true ]]; then
             [ ! $(which brew) ] && mac_install_brew
             clear_line
             p_info "Installing "
             p_success "${CASKS[$index]}"
             p_info " from Homebrew..."
             ( brew cask install ${CASKS[$index]} &>/dev/null & spinner $! )
-            if [ "${CASKS[$index]}" = "visual-studio-code-insiders" ]; then
+            if [ "${CASKS[$index]}" == "visual-studio-code-insiders" ]; then
                 VSCODE_PLUGINS=( Shan.code-settings-sync )
                 for plugin in ${VSCODE_PLUGINS[@]}; do
                     ( code-insiders --install-extension ${plugin} &>/dev/null & spinner $! )
@@ -331,27 +355,41 @@ mac_install_programming_language_env() {
 }
 
 mac_install_programming_language_from_env() {
-    unset vs; unset version; unset lv; unset av; unset v2i
+    unset versions;
+    unset version;
+    unset latest_version;
+    unset av;
+    unset version_to_install
+
 	case $1 in
-		rb*) 	vs=$(curl -sL https://www.ruby-lang.org/en/downloads | sed -n '/.*ruby-\(.*\).tar.gz.*/{s//\1/p;}') ;;
-		py*) 	vs=$(curl -sL https://www.python.org/doc/versions | sed -n '/.*release\/\(.*\)\/\".*/{s//\1/p;}') ;;
+		rb*) 	versions=$(curl -sL https://www.ruby-lang.org/en/downloads | sed -n '/.*ruby-\(.*\).tar.gz.*/{s//\1/p;}' | head -1) ;;
+		py*) 	versions=$(curl -sL https://www.python.org/doc/versions | sed -n '/.*release\/\(.*\)\/\".*/{s//\1/p;}' | head -1) ;;
         # Latest stable
-		# nod*) 	vs=$(curl -sL https://nodejs.org/download/release/index.tab | awk '($10 != "-" && NR != 1) { print $1; exit }') ;;
+		# nod*) 	versions=$(curl -sL https://nodejs.org/download/release/index.tab | awk '($10 != "-" && NR != 1) { print $1; exit }' | head -1) ;;
         # Latest
-		nod*) 	vs=$(curl -sL https://nodejs.org/download/release/index.tab | awk '(NR != 1) { print $1; exit }') ;;
-		go*) 	vs=$(curl -sL https://golang.org/dl | sed -n '/.*go\(.*\).src.tar.gz.*/{s//\1/p;}') ;;
+		nod*) 	versions=$(curl -sL https://nodejs.org/download/release/index.tab | awk '(NR != 1) { print $1; exit }' | head -1) ;;
+		go*) 	versions=$(curl -sL https://golang.org/dl | sed -n '/.*go\(.*\).src.tar.gz.*/{s//\1/p;}' | head -1) ;;
 		*) return ;;
 	esac
 
-	for v in $vs; do [ -z "$lv" ] && lv=${v}; done
-	[[ $1 == nod* ]] && lv=${lv:1}
-	[[ ${lv} ]] && for av in $($1env install --list); do [[ ${av} == ${lv}* ]] && v2i=${av}; done
-	[[ ${v2i} ]] && yes | $1env install ${v2i}; $1env global ${v2i} || p_alertln "\"$1 $lv\" is not available through \"$1env\""
+	for v in $versions; do
+        [ -z "$latest_version" ] && latest_version=${v}
+    done
+
+	[[ $1 == nod* ]] && latest_version=${latest_version:1}
+	[[ ${latest_version} ]] && for av in $($1env install --list); do [[ ${av} == ${latest_version}* ]] && version_to_install=${av}; done
+
+    if [[ ${version_to_install} ]]; then
+        yes | $1env install ${version_to_install}
+        $1env global ${version_to_install}
+    else
+        p_alertln "\"$1 $latest_version\" is not available through \"$1env\""
+    fi
+
     [[ $1 == nod* ]] && npm i -g npm
 }
 
 mac_install_programming_language() {
-    # echo $1
     local abbreviation
     case $1 in
 		go*) 	    abbreviation=go ;;
@@ -361,7 +399,7 @@ mac_install_programming_language() {
 		*) return ;;
 	esac
 
-    if [ $(which $abbreviation"env") ]; then
+    if [[ $(which $abbreviation"env") ]]; then
         mac_install_programming_language_env $abbreviation"env"
         mac_install_programming_language_from_env $abbreviation
     fi
@@ -380,10 +418,16 @@ mac_install_programming_languages() {
     local answers=()
 
     local install_all=false
-    [[ "$1" = "--all" ]] && install_all=true
+    [[ "$1" == "--all" ]] && install_all=true
+
+    local start=0
+
+    if [[ $(ps -p $$ -ocomm=) == "-zsh" ]]; then
+        start=1
+    fi
 
     if [ "$install_all" != true ]; then
-        for index in ${!LANGS[*]}; do
+        for ((index = ${start}; index < ${#LANGS[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${LANGS[$index]}"
             p_info " ?"
@@ -391,17 +435,17 @@ mac_install_programming_languages() {
         done
     fi
 
-    for index in ${!LANGS[*]}; do
-        if [[ ${answers[$index]} = true || $install_all = true ]]; then
+    for ((index = ${start}; index < ${#LANGS[@]} + ${start}; index++)); do
+        if [[ ${answers[$index]} == true || $install_all == true ]]; then
             [ ! $(which brew) ] && mac_install_brew
             clear_line
             p_info "Installing "
             p_success "${LANGS[$index]}"
             p_info " from Homebrew..."
-            if [[ "${LANGS[$index]}" = "java" ]]; then
+            if [[ "${LANGS[$index]}" == "java" ]]; then
                 ( brew cask install java &>/dev/null & spinner $! )
             else
-                ( mac_install_programming_language ${LANGS[$index]} &>/dev/null & spinner $! )
+                ( mac_install_programming_language "${LANGS[$index]}" &>/dev/null & spinner $! )
             fi
         fi
     done
@@ -422,7 +466,7 @@ mac_setup() {
 
     # The actual working part
     install_all=false
-    [[ "$1" = "--all" ]] && install_all=true
+    [[ "$1" == "--all" ]] && install_all=true
 
     configure_mac=false
     install_command_line_tools=false
@@ -637,10 +681,10 @@ setup() {
 self_update() {
     p_info "Updating DevEnv..."
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
-    [[ $SHELL == "/bin/bash" ]] && ( curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $! )
-    [[ $SHELL == "/bin/zsh" ]] && ( curl -sL $UPDATE_URL > $HOME/.zprofile & spinner $! )
-    [[ $SHELL == "/bin/bash" ]] && source $HOME/.bash_profile
-    [[ $SHELL == "/bin/zsh" ]] && source $HOME/.zprofile
+    [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && ( curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $! )
+    [[ $(ps -p $$ -ocomm=) == "-zsh" ]] && ( curl -sL $UPDATE_URL > $HOME/.zprofile & spinner $! )
+    [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && source $HOME/.bash_profile
+    [[ $(ps -p $$ -ocomm=) == "-zsh" ]] && source $HOME/.zprofile
     clear_line
     p_successln "DevEnv Updated!"
 }
@@ -774,8 +818,14 @@ mac_cleanup() {
     sudo -k
 }
 
+reload() {
+    [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && source $HOME/.bash_profile
+    [[ $(ps -p $$ -ocomm=) == "-zsh" ]] && source $HOME/.zprofile
+    p_successln "Refreshed!"
+}
+
 # Aliases
-alias r="source $HOME/.bash_profile && p_successln \"Refreshed!\""
+alias r="reload"
 alias c="mac_cleanup"
 alias u="mac_update"
 alias selfu="self_update"
@@ -796,7 +846,7 @@ if [[ ${machine} == "Mac" ]]; then
 	# alias code to code-insiders
 	[[ !$(which code) ]] && [[ $(which code-insiders) ]] && alias code="code-insiders"
 
-	[[ $SHELL == "/bin/bash" ]] && [[ $(which brew) ]] && [[ -f $(brew --prefix)/etc/bash_completion ]] && . $(brew --prefix)/etc/bash_completion
+	[[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && [[ $(which brew) ]] && [[ -f $(brew --prefix)/etc/bash_completion ]] && . $(brew --prefix)/etc/bash_completion
 
 	###-begin-npm-completion-###
 	#
