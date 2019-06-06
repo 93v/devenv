@@ -261,6 +261,9 @@ mac_install_brew_packages() {
         tmux
         vim
         zsh
+        zsh-autosuggestions
+        zsh-syntax-highlighting
+        zsh-completions
     )
 
     local answers=()
