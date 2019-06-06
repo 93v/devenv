@@ -10,6 +10,14 @@ To install the script you need to download it and save as `.bash_profile`
 curl -sL https://raw.githubusercontent.com/93v/devenv/master/script.sh > $HOME/.bash_profile && source $HOME/.bash_profile
 ```
 
+## Install as `.zprofile`
+
+To install the script you need to download it and save as `.bash_profile`
+
+```bash
+curl -sL https://raw.githubusercontent.com/93v/devenv/master/script.sh > $HOME/.zprofile && source $HOME/.zprofile
+```
+
 ## Launch setup
 
 ```bash

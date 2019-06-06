@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Better print function
 p_print() {
@@ -637,8 +637,10 @@ setup() {
 self_update() {
     p_info "Updating DevEnv..."
     UPDATE_URL="https://raw.githubusercontent.com/93v/devenv/master/script.sh"
-    ( curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $! )
-    source $HOME/.bash_profile
+    [[ $SHELL == "/bin/bash" ]] && ( curl -sL $UPDATE_URL > $HOME/.bash_profile & spinner $! )
+    [[ $SHELL == "/bin/zsh" ]] && ( curl -sL $UPDATE_URL > $HOME/.zprofile & spinner $! )
+    [[ $SHELL == "/bin/bash" ]] && source $HOME/.bash_profile
+    [[ $SHELL == "/bin/zsh" ]] && source $HOME/.zprofile
     clear_line
     p_successln "DevEnv Updated!"
 }
@@ -785,16 +787,16 @@ if [[ ${machine} == "Mac" ]]; then
 	export PATH=$HOME/bin:/opt/local/bin:/opt/local/sbin:/usr/local/opt/ruby/bin:/usr/local/sbin:$PATH
 	export JAVA_HOME=$(/usr/libexec/java_home)
 
-	[ $(which nodenv) ] && eval "$(nodenv init -)"
-	[ $(which pyenv) ] && eval "$(pyenv init -)"
-	[ $(which rbenv) ] && eval "$(rbenv init -)"
-	[ $(which goenv) ] && eval "$(goenv init -)"
+	[[ $(which nodenv) ]] && eval "$(nodenv init -)"
+	[[ $(which pyenv) ]] && eval "$(pyenv init -)"
+	[[ $(which rbenv) ]] && eval "$(rbenv init -)"
+	[[ $(which goenv) ]] && eval "$(goenv init -)"
 
 	# If Visual Studio Code is not installed and VS Code Insiders is installed
 	# alias code to code-insiders
-	[ ! $(which code) ] && [ $(which code-insiders) ] && alias code="code-insiders"
+	[[ !$(which code) ]] && [[ $(which code-insiders) ]] && alias code="code-insiders"
 
-	[ $(which brew) ] && [ -f $(brew --prefix)/etc/bash_completion ] && . $(brew --prefix)/etc/bash_completion
+	[[ $SHELL == "/bin/bash" ]] && [[ $(which brew) ]] && [[ -f $(brew --prefix)/etc/bash_completion ]] && . $(brew --prefix)/etc/bash_completion
 
 	###-begin-npm-completion-###
 	#
