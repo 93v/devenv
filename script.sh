@@ -150,7 +150,7 @@ mac_smart_install_command_line_tools() {
     if pkgutil --pkg-info com.apple.pkg.CLTools_Executables &>/dev/null; then
 		count=0
 		for file in $(pkgutil --files com.apple.pkg.CLTools_Executables); do
-			if [ ! -e "/$file" ]; then ((count++)); break; fi
+			if [[ ! -e "/$file" ]]; then ((count++)); break; fi
 		done
 		if (( count > 0 )); then
 			( sudo rm -rf /Library/Developer/CommandLineTools & spinner $! )
@@ -277,7 +277,7 @@ mac_install_brew_packages() {
         start=1
     fi
 
-    if [ "$install_all" != true ]; then
+    if [[ "$install_all" != true ]]; then
         for ((index = ${start}; index < ${#PACKAGES[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${PACKAGES[$index]}"
@@ -294,7 +294,7 @@ mac_install_brew_packages() {
             p_success "${PACKAGES[$index]}"
             p_info " from Homebrew..."
             ( brew install ${PACKAGES[$index]} &>/dev/null & spinner $! )
-            if [ "${PACKAGES[$index]}" == "nodenv" ]; then
+            if [[ "${PACKAGES[$index]}" == "nodenv" ]]; then
                 ( brew unlink node-build &>/dev/null & spinner $! )
                 ( brew install --HEAD node-build &>/dev/null & spinner $! )
                 ( brew link node-build &>/dev/null & spinner $! )
@@ -335,7 +335,7 @@ mac_install_brew_casks() {
     fi
 
 
-    if [ "$install_all" != true ]; then
+    if [[ "$install_all" != true ]]; then
         for ((index = ${start}; index < ${#CASKS[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${CASKS[$index]}"
@@ -352,7 +352,7 @@ mac_install_brew_casks() {
             p_success "${CASKS[$index]}"
             p_info " from Homebrew..."
             ( brew cask install ${CASKS[$index]} &>/dev/null & spinner $! )
-            if [ "${CASKS[$index]}" == "visual-studio-code-insiders" ]; then
+            if [[ "${CASKS[$index]}" == "visual-studio-code-insiders" ]]; then
                 VSCODE_PLUGINS=( Shan.code-settings-sync )
                 for plugin in ${VSCODE_PLUGINS[@]}; do
                     ( code-insiders --install-extension ${plugin} &>/dev/null & spinner $! )
@@ -442,7 +442,7 @@ mac_install_programming_languages() {
         start=1
     fi
 
-    if [ "$install_all" != true ]; then
+    if [[ "$install_all" != true ]]; then
         for ((index = ${start}; index < ${#LANGS[@]} + ${start}; index++)); do
             p_info "Do you want to install "
             p_success "${LANGS[$index]}"
@@ -493,14 +493,14 @@ mac_setup() {
     install_brew_casks=false
     install_programming_languages=false
 
-    if [ "$install_all" != true ]; then
+    if [[ "$install_all" != true ]]; then
         p_info "Do you want to configure macOS? "
         if prompt "[y/N]"; then configure_mac=true; fi
 
         p_info "Do you want to install Command Line Tools? "
         if prompt "[y/N]"; then install_command_line_tools=true; fi
 
-        if [ ! $(which brew) ]; then
+        if [[ ! $(which brew) ]]; then
             p_info "Do you want to install Homebrew? "
             if prompt "[y/N]"; then install_brew=true; fi
         fi
@@ -511,7 +511,7 @@ mac_setup() {
             install_command_line_tools=true
         fi
 
-        if [ ! $(which mas) ]; then
+        if [[ ! $(which mas) ]]; then
             p_info "Do you want to install Mac App Store command line interface? "
             if prompt "[y/N]"; then install_mas=true; fi
         fi
@@ -636,13 +636,13 @@ mac_update() {
     p_info "Updating macOS..."
     ( softwareupdate -ia &>/dev/null & spinner $! )
 
-    if [ $(which mas) ]; then
+    if [[ $(which mas) ]]; then
         clear_line
         p_info "Updating Mac App Store Apps..."
         ( mas upgrade &>/dev/null & spinner $! )
     fi
 
-    if [ $(which brew) ]; then
+    if [[ $(which brew) ]]; then
         clear_line
         p_info "Updating Homebrew..."
         ( mac_update_brew &>/dev/null & spinner $! )
@@ -653,27 +653,27 @@ mac_update() {
         ( brew cleanup &>/dev/null & spinner $! )
     fi
 
-    if [ $(which npm) ]; then
+    if [[ $(which npm) ]]; then
         clear_line
         p_info "Updating npm..."
         ( npm install -g npm &>/dev/null & spinner $! )
         ( npm update -g &>/dev/null & spinner $! )
     fi
 
-    if [ $(which pip) ]; then
+    if [[ $(which pip) ]]; then
         clear_line
         p_info "Updating pip..."
         ( pip list --outdated --format=freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U &>/dev/null & spinner $! )
     fi
 
-    if [ $(which gem) ]; then
+    if [[ $(which gem) ]]; then
         clear_line
         p_info "Updating gem..."
         ( gem update --system &>/dev/null & spinner $! )
         ( gem update &>/dev/null & spinner $! )
     fi
 
-    if [ $(which vagrant) ]; then
+    if [[ $(which vagrant) ]]; then
         clear_line
         p_info "Updating Vagrant Plugins..."
         ( vagrant plugin update &>/dev/null & spinner $! )
@@ -944,7 +944,7 @@ fi
 # bash script.sh function_name arg1 arg2
 
 # Check if the function exists (bash specific)
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
     if declare -f "$1" > /dev/null;
     then
     	# call arguments verbatim
