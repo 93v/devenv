@@ -718,67 +718,67 @@ mac_cleanup() {
     # Empty Trash
     clear_line
     p_info "Removing Volumes Trashes..."
-	( sudo rm -rf /Volumes/*/.Trashes &>/dev/null & spinner $! )
+	( sudo rm -rf "/Volumes/*/.Trashes" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Trash..."
-	( sudo rm -rf ~/.Trash &>/dev/null & spinner $! )
+	( sudo rm -rf "~/.Trash" &>/dev/null & spinner $! )
 	# User Caches and Logs
     clear_line
     p_info "Removing Library Caches..."
-	( rm -rf ~/Library/Caches/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/Caches/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Library Logs..."
-	( rm -rf ~/Library/logs/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/logs/*" &>/dev/null & spinner $! )
 	# System Caches and Logs
     clear_line
     p_info "Removing System Caches..."
-	( sudo rm -rf /Library/Caches/* &>/dev/null & spinner $! )
+	( sudo rm -rf "/Library/Caches/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing System Logs..."
-	( sudo rm -rf /Library/logs/* &>/dev/null & spinner $! )
+	( sudo rm -rf "/Library/logs/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Logs..."
-	( sudo rm -rf /var/log/* &>/dev/null & spinner $! )
+	( sudo rm -rf "/var/log/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing ASL Logs..."
-	( sudo rm -rf /private/var/log/asl/*.asl &>/dev/null & spinner $! )
+	( sudo rm -rf "/private/var/log/asl/*.asl" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Diagnostic Reports..."
-	( sudo rm -rf /Library/Logs/DiagnosticReports/* &>/dev/null & spinner $! )
+	( sudo rm -rf "/Library/Logs/DiagnosticReports/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Adobe Logs..."
-	( sudo rm -rf /Library/Logs/Adobe/* &>/dev/null & spinner $! )
+	( sudo rm -rf "/Library/Logs/Adobe/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Mail Logs..."
-	( rm -rf ~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/Containers/com.apple.mail/Data/Library/Logs/Mail/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Core Simulator Logs..."
-	( rm -rf ~/Library/Logs/CoreSimulator/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/Logs/CoreSimulator/*" &>/dev/null & spinner $! )
 	# Adobe Caches
     clear_line
     p_info "Removing Adobe Caches..."
-	( sudo rm -rf ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* &>/dev/null & spinner $! )
+	( sudo rm -rf "~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/*" &>/dev/null & spinner $! )
 	# Private Folders
     clear_line
     p_info "Removing Private Folders..."
-	( sudo rm -rf /private/var/folders/* &>/dev/null & spinner $! )
+	( sudo rm -rf "/private/var/folders/*" &>/dev/null & spinner $! )
 	# iOS Apps, Backups and Photos Cache
     clear_line
     p_info "Removing iOS Apps..."
-	( rm -rf ~/Music/iTunes/iTunes\ Media/Mobile\ Applications/* &>/dev/null & spinner $! )
+	( rm -rf "~/Music/iTunes/iTunes\ Media/Mobile\ Applications/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing iOS Backups..."
-	( rm -rf ~/Library/Application\ Support/MobileSync/Backup/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/Application\ Support/MobileSync/Backup/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing iOS Photo Cache..."
-	( rm -rf ~/Pictures/iPhoto\ Library/iPod\ Photo\ Cache/* &>/dev/null & spinner $! )
+	( rm -rf "~/Pictures/iPhoto\ Library/iPod\ Photo\ Cache/*" &>/dev/null & spinner $! )
 	# XCode Derived Data and Archives
     clear_line
     p_info "Removing Xcode Derived Data..."
-	( rm -rf ~/Library/Developer/Xcode/DerivedData/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/Developer/Xcode/DerivedData/*" &>/dev/null & spinner $! )
     clear_line
     p_info "Removing Xcode Archives..."
-	( rm -rf ~/Library/Developer/Xcode/Archives/* &>/dev/null & spinner $! )
+	( rm -rf "~/Library/Developer/Xcode/Archives/*" &>/dev/null & spinner $! )
 	# Homebrew Cache
     if type "brew" > /dev/null; then
         clear_line
@@ -787,7 +787,7 @@ mac_cleanup() {
     fi
     clear_line
     p_info "Removing Homebrew Caches..."
-	( rm -rf /Library/Caches/Homebrew/* &>/dev/null & spinner $! )
+	( rm -rf "/Library/Caches/Homebrew/*" &>/dev/null & spinner $! )
     if type "brew" > /dev/null; then
         clear_line
         p_info "Repairing Homebrew taps..."
@@ -824,7 +824,7 @@ mac_cleanup() {
 	do
         clear_line
         p_info "Removing Containers Data Caches..."
-		( rm -rf ~/Library/Containers/$x/Data/Library/Caches/* &>/dev/null & spinner $! )
+		( rm -rf "~/Library/Containers/$x/Data/Library/Caches/*" &>/dev/null & spinner $! )
 	done
 
     clear_line
