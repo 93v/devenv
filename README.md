@@ -12,7 +12,7 @@ curl -sL https://raw.githubusercontent.com/93v/devenv/master/script.sh > $HOME/.
 
 ## Install as `.zprofile`
 
-To install the script you need to download it and save as `.bash_profile`
+To install the script you need to download it and save as `.zprofile`
 
 ```bash
 curl -sL https://raw.githubusercontent.com/93v/devenv/master/script.sh > $HOME/.zprofile && source $HOME/.zprofile
