@@ -856,10 +856,10 @@ if [[ ${machine} == "Mac" ]]; then
     # [[ $(which brew) ]] && [[ -f $(brew --prefix asdf)/asdf.sh ]] && . $(brew --prefix asdf)/asdf.sh
     # [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && [[ $(which brew) ]] && [[ -f $(brew --prefix asdf)/etc/bash_completion.d/asdf.bash ]] && . $(brew --prefix asdf)/etc/bash_completion.d/asdf.bash
 
-	[[ $(which nodenv) ]] && eval "$(nodenv init -)"
-	[[ $(which pyenv) ]] && eval "$(pyenv init -)"
-	[[ $(which rbenv) ]] && eval "$(rbenv init -)"
-	[[ $(which goenv) ]] && eval "$(goenv init -)"
+	if type "nodenv" > /dev/null; then eval "$(nodenv init -)"; fi
+	if type "pyenv" > /dev/null; then eval "$(pyenv init -)"; fi
+	if type "rbenv" > /dev/null; then eval "$(rbenv init -)"; fi
+	if type "goenv" > /dev/null; then eval "$(goenv init -)"; fi
 
 	# If Visual Studio Code is not installed and VS Code Insiders is installed
 	# alias code to code-insiders
