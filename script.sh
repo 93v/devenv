@@ -851,7 +851,7 @@ alias slefu="self_update"
 # Initializer script
 if [[ ${machine} == "Mac" ]]; then
 	export PATH=$HOME/bin:/opt/local/bin:/opt/local/sbin:/usr/local/opt/ruby/bin:/usr/local/sbin:$PATH
-	export JAVA_HOME=$(/usr/libexec/java_home)
+	[ -d "/usr/libexec/java_home" ] && export JAVA_HOME=$(/usr/libexec/java_home)
 
     # [[ $(which brew) ]] && [[ -f $(brew --prefix asdf)/asdf.sh ]] && . $(brew --prefix asdf)/asdf.sh
     # [[ $(ps -p $$ -ocomm=) == "/bin/bash" ]] && [[ $(which brew) ]] && [[ -f $(brew --prefix asdf)/etc/bash_completion.d/asdf.bash ]] && . $(brew --prefix asdf)/etc/bash_completion.d/asdf.bash
